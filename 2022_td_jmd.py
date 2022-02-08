@@ -8,19 +8,16 @@ class Vue():
         self.parent = parent
         self.modele = self.parent.modele
         self.root = Tk()
-        self.root.title("Carre Rouge, alpha_0.1")
+        self.root.title("Les TOURS à jmd, alpha_0.1")
         self.cadres = self.creer_interface()
 
     def creer_interface(self):
         # cadre HUD affichant la duree
         self.cadre_info = Frame(self.root, bg="lightgreen")
-        self.var_duree = StringVar()
-        label_duree = Label(self.cadre_info, text="0", textvariable=self.var_duree)
-        label_duree.pack()
         btn_demarrer = Button(self.cadre_info, text="DEMARRER", command=self.parent.debuter_partie)
         btn_demarrer.pack()
         # le canevas de jeu
-        self.canevas = Canvas(self.root, width=self.modele.largeur, height=self.modele.hauteur, bg="white")
+        self.canevas = Canvas(self.root, width=self.modele.largeur, height=self.modele.hauteur, bg="lightblue")
         # visualiser
         self.cadre_info.pack(expand=1, fill=X)
         self.canevas.pack()
@@ -91,7 +88,7 @@ class Partie():
         self.creeps_en_jeu=[]
         self.tours = []
         self.morts=[]
-        self.delaicreepmax=50
+        self.delaicreepmax=30
         self.delaicreep=0
         self.chemins=[
                       [[0, 200], [200, 50]],
@@ -143,7 +140,7 @@ class Creep():
         self.cibley=None
         self.angle=0
         self.prochaintroncon=0
-        self.vitesse=5
+        self.vitesse=4
         self.mana=100
         self.demitaille = 16
         self.couleur="green"
@@ -181,22 +178,24 @@ class Tour():
         self.parent = parent
         self.x = x
         self.y = y
-        self.etendue=100
+        self.etendue=120
         self.delai_attaque=0
-        self.delai_attaque_max=6
+        self.delai_attaque_max=7
         self.demi_largeur = 10
         self.demi_hauteur=30
         self.projectiles=[]
         self.morts=[]
 
     def jouer_tour(self):
-        for i in self.parent.creeps_en_jeu:
-            dist=helper.Helper.calcDistance(self.x,self.y,i.x,i.y)
-            if dist<self.etendue and self.delai_attaque<1:
-                self.projectiles.append(Obus(self,i))
-                self.delai_attaque=self.delai_attaque_max
-            else:
-                self.delai_attaque-=1
+        self.delai_attaque -= 1
+        if self.delai_attaque < 1:
+            for i in self.parent.creeps_en_jeu:
+                dist=helper.Helper.calcDistance(self.x,self.y,i.x,i.y)
+                if dist<self.etendue :
+                    self.projectiles.append(Obus(self,i))
+                    self.delai_attaque=self.delai_attaque_max
+                    break
+
         for i in self.projectiles:
             i.avancer()
 
@@ -213,7 +212,7 @@ class Obus():
         self.cibley=cible.y
         self.cible=cible
         self.demitaille=3
-        self.vitesse=10
+        self.vitesse=7
         self.couleur="orange"
         self.force=10
         self.angle=helper.Helper.calcAngle(self.x,self.y,self.ciblex,self.cibley)
@@ -228,7 +227,9 @@ class Obus():
             self.y = y
 
     def explose(self):
-        self.cible.blesser(self.force)
+        dist = helper.Helper.calcDistance(self.x, self.y, self.cible.x, self.cible.y)
+        if dist<(self.vitesse*4):
+            self.cible.blesser(self.force)
         self.parent.morts.append(self)
 
 class Controleur():
