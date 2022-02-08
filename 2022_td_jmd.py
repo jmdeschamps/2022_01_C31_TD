@@ -51,6 +51,13 @@ class Vue():
         for i in self.modele.partie.creeps_en_jeu:
             self.canevas.create_oval(i.x-i.demitaille,i.y-i.demitaille,
                                      i.x+ i.demitaille, i.y+ i.demitaille,fill=i.couleur,tags=("mobile",))
+
+        for j in self.modele.partie.tours:
+            for i in j.projectiles:
+                self.canevas.create_oval(i.x - i.demitaille, i.y - i.demitaille,
+                                         i.x + i.demitaille, i.y + i.demitaille, fill=i.couleur, tags=("mobile",))
+
+
     def afficher_tour(self,tour):
         self.canevas.create_rectangle(tour.x-tour.demi_largeur,tour.y-tour.demi_hauteur,
                                       tour.x+tour.demi_largeur,tour.y+tour.demi_hauteur,
@@ -83,7 +90,8 @@ class Partie():
         self.creeps_en_attente = []
         self.creeps_en_jeu=[]
         self.tours = []
-        self.delaicreepmax=20
+        self.morts=[]
+        self.delaicreepmax=50
         self.delaicreep=0
         self.chemins=[
                       [[0, 200], [200, 50]],
@@ -119,6 +127,11 @@ class Partie():
 
         for i in self.tours:
             i.jouer_tour()
+
+        for i in self.morts:
+            if i in self.creeps_en_jeu:
+                self.creeps_en_jeu.remove(i)
+        self.morts=[]
 
 
 class Creep():
@@ -158,26 +171,38 @@ class Creep():
             self.x=x
             self.y=y
 
+    def blesser(self,force):
+        self.mana-=force
+        if self.mana<1:
+            self.parent.morts.append(self)
+
 class Tour():
     def __init__(self, parent,x,y):
         self.parent = parent
         self.x = x
         self.y = y
-        self.etendue=200
+        self.etendue=100
         self.delai_attaque=0
         self.delai_attaque_max=6
         self.demi_largeur = 10
         self.demi_hauteur=30
+        self.projectiles=[]
+        self.morts=[]
 
     def jouer_tour(self):
         for i in self.parent.creeps_en_jeu:
             dist=helper.Helper.calcDistance(self.x,self.y,i.x,i.y)
-            if dist<self.etendue and self.delai_attaque==0:
+            if dist<self.etendue and self.delai_attaque<1:
                 self.projectiles.append(Obus(self,i))
-                self.delai_attaque-self.delai_attaque_max
+                self.delai_attaque=self.delai_attaque_max
             else:
                 self.delai_attaque-=1
-        pass
+        for i in self.projectiles:
+            i.avancer()
+
+        for i in self.morts:
+            self.projectiles.remove(i)
+        self.morts=[]
 
 class Obus():
     def __init__(self,parent,cible):
@@ -186,15 +211,25 @@ class Obus():
         self.y=self.parent.y
         self.ciblex=cible.x
         self.cibley=cible.y
+        self.cible=cible
+        self.demitaille=3
+        self.vitesse=10
+        self.couleur="orange"
+        self.force=10
         self.angle=helper.Helper.calcAngle(self.x,self.y,self.ciblex,self.cibley)
 
     def avancer(self):
+        x,y=helper.Helper.getAngledPoint(self.angle,self.vitesse,self.x,self.y)
         dist = helper.Helper.calcDistance(x, y, self.ciblex, self.cibley)
         if dist < self.vitesse:
-            self.trouver_prochain_troncon()
+            self.explose()
         else:
             self.x = x
             self.y = y
+
+    def explose(self):
+        self.cible.blesser(self.force)
+        self.parent.morts.append(self)
 
 class Controleur():
     def __init__(self):
