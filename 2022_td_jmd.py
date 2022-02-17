@@ -22,9 +22,17 @@ class Vue():
         self.cadre_info.pack(expand=1, fill=X)
         self.canevas.pack()
 
-        self.canevas.bind("<Button>",self.creer_tour)
+        self.canevas.bind("<Button-1>",self.creer_tour)
+        self.canevas.bind("<Button-3>",self.compter)
 
-        self.afficher_partie()
+        #self.afficher_partie()
+
+    def compter(self,evt):
+        total=len(self.modele.partie.creeps_en_jeu)
+        for i in self.modele.partie.tours:
+            total+=1
+            total+=len(i.projectiles)
+        print(total)
 
     def creer_tour(self,evt):
         x=evt.x
@@ -59,6 +67,8 @@ class Vue():
         self.canevas.create_rectangle(tour.x-tour.demi_largeur,tour.y-tour.demi_hauteur,
                                       tour.x+tour.demi_largeur,tour.y+tour.demi_hauteur,
                                       fill="purple")
+        self.compter(None)
+
     def afficher_chemin(self):
         for i in self.modele.partie.chemins:
             self.canevas.create_line(i[0],i[1],fill="red",width=30)
@@ -83,12 +93,12 @@ class Partie():
         self.largeur = self.parent.largeur
         self.hauteur = self.parent.hauteur
         self.nivo=0
-        self.nbparnivo=10
+        self.nbparnivo=1000
         self.creeps_en_attente = []
         self.creeps_en_jeu=[]
         self.tours = []
         self.morts=[]
-        self.delaicreepmax=30
+        self.delaicreepmax=2
         self.delaicreep=0
         self.chemins=[
                       [[0, 200], [200, 50]],
@@ -141,7 +151,7 @@ class Creep():
         self.angle=0
         self.prochaintroncon=0
         self.vitesse=4
-        self.mana=100
+        self.mana=30
         self.demitaille = 16
         self.couleur="green"
 
@@ -178,9 +188,9 @@ class Tour():
         self.parent = parent
         self.x = x
         self.y = y
-        self.etendue=120
+        self.etendue=150
         self.delai_attaque=0
-        self.delai_attaque_max=7
+        self.delai_attaque_max=3
         self.demi_largeur = 10
         self.demi_hauteur=30
         self.projectiles=[]
@@ -237,6 +247,7 @@ class Controleur():
         self.partie_en_cours = 0
         self.modele = Modele(self)
         self.vue = Vue(self)
+        self.vue.afficher_chemin()
         self.vue.root.mainloop()
 
     def recibler_pion(self, x, y):
@@ -244,14 +255,14 @@ class Controleur():
 
     def debuter_partie(self):
         self.partie_en_cours=1
-        self.vue.afficher_chemin()
+        #self.vue.afficher_chemin()
         self.jouer_partie()
 
     def jouer_partie(self):
         if self.partie_en_cours:
             self.modele.jouer_tour()
             self.vue.afficher_partie()
-            self.vue.root.after(40, self.jouer_partie)
+            self.vue.root.after(10, self.jouer_partie)
 
     def creer_tour(self,x,y):
         rep=self.modele.creer_tour(x,y)
