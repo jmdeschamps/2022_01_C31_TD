@@ -21,11 +21,14 @@ class Vue():
         # visualiser
         self.cadre_info.pack(expand=1, fill=X)
         self.canevas.pack()
-
+        self.canevas.create_polygon(10,300,100,250,200,280,300,200,450,300,smooth=1,width=2,tags=("poly",))
+        self.canevas.create_rectangle(100,220,500,250,fill="green",width=2,tags=("rect",))
         self.canevas.bind("<Button-1>",self.creer_tour)
+        self.canevas.bind("<Button-2>",self.bouger)
         self.canevas.bind("<Button-3>",self.compter)
 
-        #self.afficher_partie()
+    def bouger(self,evt):
+        self.canevas.tag_lower("rect")
 
     def compter(self,evt):
         total=len(self.modele.partie.creeps_en_jeu)
